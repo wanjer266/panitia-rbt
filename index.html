@@ -98,6 +98,16 @@ dialog::backdrop{background:rgba(8,17,34,.55)}
 .toast.show{opacity:1;transform:none}
 @media(max-width:1050px){.app{grid-template-columns:1fr}.sidebar{position:relative;height:auto}.stats{grid-template-columns:repeat(2,1fr)}.folderGrid,.linksGrid,.classGrid,.twoCol{grid-template-columns:1fr}}
 @media(max-width:600px){.main{padding:15px}.stats{grid-template-columns:1fr 1fr}.formGrid{grid-template-columns:1fr}.field.full{grid-column:auto}.search{width:100%}}
+
+/* OPR Generator */
+.oprHint{font-size:12px;color:var(--muted);line-height:1.45}
+.oprImagePreview{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px}
+.oprThumb{position:relative;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#f4f6f9;aspect-ratio:4/3}
+.oprThumb img{width:100%;height:100%;object-fit:cover;display:block}
+.oprThumb span{position:absolute;right:5px;bottom:5px;background:rgba(0,0,0,.65);color:#fff;font-size:10px;padding:3px 6px;border-radius:999px}
+.oprDateRow{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.oprDateRow input[type=checkbox]{width:18px;height:18px}
+@media(max-width:600px){.oprImagePreview{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
 <body>
@@ -284,6 +294,35 @@ dialog::backdrop{background:rgba(8,17,34,.55)}
   </div>
 </dialog>
 
+<dialog id="oprDialog">
+  <div class="modal">
+    <h3>Jana One Page Report (OPR)</h3>
+    <div class="sub" style="margin-bottom:14px">OPR akan dijana sebagai PDF dan terus disimpan di <b>Evidens Projek</b> dalam Google Drive MOE.</div>
+    <div class="formGrid">
+      <div class="field full"><label>Tajuk Program / Aktiviti</label><input id="oprTitle" class="control" placeholder="Contoh: Projek Reka Bentuk Sistem Akuaponik"></div>
+      <div class="field full"><label>Objektif</label><textarea id="oprObjective" class="control textarea" placeholder="Masukkan objektif. Boleh tulis beberapa objektif pada baris berasingan."></textarea></div>
+      <div class="field full">
+        <label>Tarikh</label>
+        <div class="oprDateRow">
+          <input id="oprShowDate" type="checkbox" checked>
+          <label for="oprShowDate" style="font-weight:600">Paparkan tarikh dalam OPR</label>
+          <input id="oprDate" class="control" type="date" style="max-width:190px">
+        </div>
+      </div>
+      <div class="field full">
+        <label>Gambar Aktiviti (minimum 1, maksimum 7)</label>
+        <input id="oprImages" class="control" type="file" accept="image/*" multiple>
+        <div class="oprHint">Boleh pilih gambar dari galeri atau kamera telefon. Sistem akan mengecilkan gambar supaya PDF lebih ringan.</div>
+        <div id="oprImagesPreview" class="oprImagePreview"></div>
+      </div>
+    </div>
+    <div class="modalActions">
+      <button class="btn" onclick="oprDialog.close()">Batal</button>
+      <button class="btn primary" id="generateOprBtn">Jana & Simpan ke Drive</button>
+    </div>
+  </div>
+</dialog>
+
 <dialog id="viewerDialog" class="viewerDialog">
   <div class="viewerWrap">
     <div class="viewerHead"><strong id="viewerTitle">PDF Viewer</strong><button class="btn small" onclick="viewerDialog.close()">Tutup</button></div>
@@ -293,6 +332,7 @@ dialog::backdrop{background:rgba(8,17,34,.55)}
 
 <div class="toast" id="toast"></div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="config.js"></script>
 <script>
 const STRUCTURE=[
@@ -395,10 +435,96 @@ async function showFolder(id){
   currentFolder=id;setView("folder");const f=STRUCTURE.find(x=>x.id===id),classes=await getSubjectClasses();if(id!=="pentaksiran")currentClassFilter="ALL";await refreshClassControls();$("pentaksiranClassBar").classList.toggle("hidden",id!=="pentaksiran");
   const docs=state.documents.filter(d=>Number(d.year)===currentYear&&docSubject(d)===currentSubject&&d.folder===id&&classMatches(d));
   $("folderTitle").textContent=f.name;$("folderBadge").textContent=`${docs.length} dokumen`;$("pageTitle").textContent=f.name;$("pageSub").textContent=id==="pentaksiran"?`${currentSubject} • Tahun ${currentYear} • Boleh ditapis mengikut kelas`:`${currentSubject} • Tahun ${currentYear}`;updateBreadcrumb(f.name);
-  $("subtopicsWrap").innerHTML=f.subs.map((sub,idx)=>{const arr=docs.filter(d=>d.subtopic===sub).sort((a,b)=>new Date(b.uploadedAt)-new Date(a.uploadedAt));return `<div class="subtopic"><div class="subtop"><div><div class="subname">${esc(sub)}</div><div class="meta">${arr.length} dokumen</div></div><button class="btn primary small uploadPdfBtn" data-folder="${id}" data-sub-index="${idx}">+ Upload PDF</button></div><div class="docs">${arr.length?arr.map(d=>docCard(d,classes)).join(""):'<div class="empty">Belum ada PDF.</div>'}</div></div>`}).join("");
+  $("subtopicsWrap").innerHTML=f.subs.map((sub,idx)=>{const arr=docs.filter(d=>d.subtopic===sub).sort((a,b)=>new Date(b.uploadedAt)-new Date(a.uploadedAt));const oprBtn=(id==="pentaksiran"&&sub==="Evidens Projek")?`<button class="btn small generateOprOpenBtn">+ Jana OPR</button>`:"";return `<div class="subtopic"><div class="subtop"><div><div class="subname">${esc(sub)}</div><div class="meta">${arr.length} dokumen</div></div><div class="actions" style="margin-top:0">${oprBtn}<button class="btn primary small uploadPdfBtn" data-folder="${id}" data-sub-index="${idx}">+ Upload PDF</button></div></div><div class="docs">${arr.length?arr.map(d=>docCard(d,classes)).join(""):'<div class="empty">Belum ada PDF.</div>'}</div></div>`}).join("");
   document.querySelectorAll(".uploadPdfBtn").forEach(btn=>btn.addEventListener("click",()=>{const folder=btn.dataset.folder,subIndex=Number(btn.dataset.subIndex),folderObj=STRUCTURE.find(x=>x.id===folder);openUpload(folder,folderObj.subs[subIndex])}));
+  document.querySelectorAll(".generateOprOpenBtn").forEach(btn=>btn.addEventListener("click",openOprGenerator));
   document.querySelectorAll(".folderNav").forEach(b=>b.classList.toggle("active",b.dataset.folder===id));
 }
+let oprSelectedFiles=[];
+function openOprGenerator(){
+  $("oprTitle").value="";
+  $("oprObjective").value="";
+  $("oprShowDate").checked=true;
+  $("oprDate").value=new Date().toISOString().slice(0,10);
+  $("oprImages").value="";
+  oprSelectedFiles=[];
+  renderOprImagePreview();
+  $("oprDialog").showModal();
+}
+function renderOprImagePreview(){
+  const wrap=$("oprImagesPreview");
+  wrap.innerHTML="";
+  oprSelectedFiles.forEach((f,i)=>{
+    const url=URL.createObjectURL(f);
+    const d=document.createElement("div");d.className="oprThumb";
+    d.innerHTML=`<img alt="Gambar ${i+1}"><span>${i+1}</span>`;
+    d.querySelector("img").src=url;
+    d.querySelector("img").onload=()=>URL.revokeObjectURL(url);
+    wrap.appendChild(d);
+  });
+}
+$("oprImages").onchange=e=>{
+  const files=[...(e.target.files||[])].filter(f=>f.type.startsWith("image/"));
+  if(files.length>7){toast("Maksimum 7 gambar sahaja.");e.target.value="";oprSelectedFiles=[];renderOprImagePreview();return;}
+  oprSelectedFiles=files;renderOprImagePreview();
+};
+$("oprShowDate").onchange=e=>{$("oprDate").disabled=!e.target.checked};
+function blobToBase64(blob){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result).split(",")[1]);r.onerror=()=>reject(r.error);r.readAsDataURL(blob)})}
+function loadImageFile(file){return new Promise((resolve,reject)=>{const u=URL.createObjectURL(file),img=new Image();img.onload=()=>{URL.revokeObjectURL(u);resolve(img)};img.onerror=()=>{URL.revokeObjectURL(u);reject(new Error("Gagal membaca gambar."))};img.src=u})}
+async function imageToJpegData(file,maxSide=1400,quality=.76){
+  const img=await loadImageFile(file),scale=Math.min(1,maxSide/Math.max(img.naturalWidth,img.naturalHeight));
+  const w=Math.max(1,Math.round(img.naturalWidth*scale)),h=Math.max(1,Math.round(img.naturalHeight*scale));
+  const c=document.createElement("canvas");c.width=w;c.height=h;const ctx=c.getContext("2d");ctx.fillStyle="#fff";ctx.fillRect(0,0,w,h);ctx.drawImage(img,0,0,w,h);
+  return {data:c.toDataURL("image/jpeg",quality),w,h};
+}
+function addContainedImage(pdf,img,x,y,w,h){
+  const ratio=Math.min(w/img.w,h/img.h),dw=img.w*ratio,dh=img.h*ratio,dx=x+(w-dw)/2,dy=y+(h-dh)/2;
+  pdf.setDrawColor(220);pdf.setFillColor(248,249,251);pdf.roundedRect(x,y,w,h,2,2,"FD");
+  pdf.addImage(img.data,"JPEG",dx,dy,dw,dh,undefined,"FAST");
+}
+function getOprCells(n,x,y,w,h,g=4){
+  if(n===1)return [[x,y,w,h]];
+  if(n===2)return [[x,y,(w-g)/2,h],[x+(w+g)/2,y,(w-g)/2,h]];
+  if(n===3){const rh=(h-g)/2,cw=(w-g)/2;return [[x,y,cw,rh],[x+cw+g,y,cw,rh],[x+(w*0.18),y+rh+g,w*0.64,rh]];}
+  if(n===4){const cw=(w-g)/2,rh=(h-g)/2;return [[x,y,cw,rh],[x+cw+g,y,cw,rh],[x,y+rh+g,cw,rh],[x+cw+g,y+rh+g,cw,rh]];}
+  if(n===5){const rh=(h-g)/2,cw2=(w-g)/2,cw3=(w-2*g)/3;return [[x,y,cw2,rh],[x+cw2+g,y,cw2,rh],[x,y+rh+g,cw3,rh],[x+cw3+g,y+rh+g,cw3,rh],[x+2*(cw3+g),y+rh+g,cw3,rh]];}
+  if(n===6){const cw=(w-2*g)/3,rh=(h-g)/2;return Array.from({length:6},(_,i)=>[x+(i%3)*(cw+g),y+Math.floor(i/3)*(rh+g),cw,rh]);}
+  const topH=h*.38,bottomH=(h-topH-g*2)/2,cw=(w-2*g)/3;const a=[[x+w*.18,y,w*.64,topH]];for(let i=0;i<6;i++)a.push([x+(i%3)*(cw+g),y+topH+g+Math.floor(i/3)*(bottomH+g),cw,bottomH]);return a;
+}
+function safeFileName(s){return (s||"OPR").replace(/[\\/:*?"<>|]+/g,"-").replace(/\s+/g," ").trim().slice(0,80)||"OPR"}
+async function buildOprPdf(title,objective,showDate,dateValue,files){
+  if(!window.jspdf||!window.jspdf.jsPDF)throw new Error("Library PDF belum dimuatkan. Pastikan internet aktif dan refresh halaman.");
+  const {jsPDF}=window.jspdf,pdf=new jsPDF({orientation:"portrait",unit:"mm",format:"a4",compress:true});
+  const pw=210,ph=297,m=14;
+  pdf.setFillColor(23,41,68);pdf.rect(0,0,pw,29,"F");
+  try{const logo=document.querySelector(".school img")?.src;if(logo?.startsWith("data:image"))pdf.addImage(logo,"PNG",m,5,18,18,undefined,"FAST")}catch(_){ }
+  pdf.setTextColor(255);pdf.setFont("helvetica","bold");pdf.setFontSize(16);pdf.text("ONE PAGE REPORT (OPR)",pw/2,11,{align:"center"});
+  pdf.setFontSize(9);pdf.setFont("helvetica","normal");pdf.text("SBP Integrasi Selandar, Melaka",pw/2,17,{align:"center"});pdf.text(`Panitia ${currentSubject} | Evidens Projek | ${currentYear}`,pw/2,22,{align:"center"});
+  let y=36;pdf.setTextColor(25);pdf.setFont("helvetica","bold");pdf.setFontSize(12);pdf.text("TAJUK",m,y);y+=5;
+  pdf.setFontSize(14);const titleLines=pdf.splitTextToSize(title,pw-2*m);pdf.text(titleLines,m,y);y+=titleLines.length*6+2;
+  if(showDate&&dateValue){const dt=new Date(dateValue+"T00:00:00");const ds=dt.toLocaleDateString("ms-MY",{day:"2-digit",month:"long",year:"numeric"});pdf.setFont("helvetica","bold");pdf.setFontSize(9);pdf.text("Tarikh: "+ds,m,y);y+=6;}
+  pdf.setFillColor(244,247,251);pdf.setDrawColor(220);pdf.roundedRect(m,y,pw-2*m,28,2,2,"FD");pdf.setFont("helvetica","bold");pdf.setFontSize(10);pdf.text("OBJEKTIF",m+4,y+6);
+  pdf.setFont("helvetica","normal");pdf.setFontSize(9);let objText=objective.trim();const raw=objText.split(/\n+/).filter(Boolean).map((t,i)=>`${i+1}. ${t.replace(/^\s*\d+[.)-]?\s*/,"")}`).join("\n");let lines=pdf.splitTextToSize(raw,pw-2*m-8);if(lines.length>7){pdf.setFontSize(8);lines=pdf.splitTextToSize(raw,pw-2*m-8).slice(0,9)}pdf.text(lines,m+4,y+12,{lineHeightFactor:1.15});y+=34;
+  pdf.setFont("helvetica","bold");pdf.setFontSize(10);pdf.text("GAMBAR AKTIVITI",m,y);y+=4;
+  const imgs=[];for(const f of files)imgs.push(await imageToJpegData(f));
+  const areaH=Math.max(75,ph-y-17),cells=getOprCells(imgs.length,m,y,pw-2*m,areaH,3);cells.forEach((c,i)=>addContainedImage(pdf,imgs[i],...c));
+  pdf.setFont("helvetica","normal");pdf.setFontSize(7.5);pdf.setTextColor(110);pdf.text(`Dijana melalui e-Fail Pengurusan Panitia | ${currentSubject}`,m,292);pdf.text("1 / 1",pw-m,292,{align:"right"});
+  return pdf;
+}
+$("generateOprBtn").onclick=async()=>{
+  const title=$("oprTitle").value.trim(),objective=$("oprObjective").value.trim(),showDate=$("oprShowDate").checked,dateValue=$("oprDate").value;
+  if(!title)return toast("Masukkan tajuk OPR.");if(!objective)return toast("Masukkan objektif OPR.");if(oprSelectedFiles.length<1)return toast("Pilih sekurang-kurangnya 1 gambar.");if(oprSelectedFiles.length>7)return toast("Maksimum 7 gambar sahaja.");if(showDate&&!dateValue)return toast("Pilih tarikh atau nyah tanda Paparkan tarikh.");
+  const b=$("generateOprBtn");b.disabled=true;b.textContent="Menjana PDF...";
+  try{
+    const pdf=await buildOprPdf(title,objective,showDate,dateValue,oprSelectedFiles),blob=pdf.output("blob"),base64=await blobToBase64(blob);
+    const classId=currentClassFilter!=="ALL"&&currentClassFilter!=="GENERAL"?String(currentClassFilter):null;
+    const fileName=`OPR_${safeFileName(title)}.pdf`;
+    b.textContent="Menyimpan ke Drive...";
+    await apiPost({action:"uploadPdf",meta:{subject:currentSubject,year:currentYear,classId,folder:"pentaksiran",subtopic:"Evidens Projek",title:`OPR - ${title}`,notes:`OPR dijana melalui dashboard${showDate&&dateValue?" | Tarikh: "+dateValue:""} | ${oprSelectedFiles.length} gambar`,status:"Lengkap",fileName,mimeType:"application/pdf"},base64});
+    $("oprDialog").close();toast("OPR berjaya dijana dan disimpan ke Drive MOE.");await showFolder("pentaksiran");
+  }catch(e){console.error(e);toast(e.message||"Gagal menjana OPR.")}finally{b.disabled=false;b.textContent="Jana & Simpan ke Drive"}
+};
+
 async function openUpload(folder,subtopic){uploadTarget={folder,subtopic};await refreshClassControls();const useClass=folder==="pentaksiran";$("docClassField").classList.toggle("hidden",!useClass);$("uploadHeading").textContent="Upload PDF – "+subtopic;$("docYear").value=currentYear;$("docTitle").value="";$("docFile").value="";$("docNotes").value="";$("docStatus").value="Lengkap";$("docClass").value=useClass&&currentClassFilter!=="ALL"&&currentClassFilter!=="GENERAL"?String(currentClassFilter):"";$("uploadDialog").showModal()}
 function fileToBase64(file){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result).split(",")[1]);r.onerror=()=>reject(r.error);r.readAsDataURL(file)})}
 $("saveDocBtn").onclick=async()=>{
