@@ -42,12 +42,23 @@
         "background-image:url(\"data:image/svg+xml;utf8," + encodeURIComponent(svg) + "\")";
       document.body.appendChild(wm);
     }
+    if (!document.getElementById("ejenGayaDemo")) {
+      var g = document.createElement("style");
+      g.id = "ejenGayaDemo";
+      g.textContent = "#ejenBannerDemo .pendek{display:none}" +
+        "@media(max-width:640px){#ejenBannerDemo{font-size:11px!important;padding:5px 12px!important}" +
+        "#ejenBannerDemo .panjang{display:none}#ejenBannerDemo .pendek{display:inline}}";
+      document.head.appendChild(g);
+    }
     if (!bn) {
       bn = document.createElement("div");
       bn.id = "ejenBannerDemo";
       bn.setAttribute("role", "status");
-      bn.textContent = "DEMO — Ejen Susulan Dokumen Panitia • data rekaan untuk pertandingan";
-      bn.style.cssText = "position:fixed;top:0;left:50%;transform:translateX(-50%);z-index:99999;pointer-events:none;" +
+      bn.innerHTML = 'DEMO<span class="panjang"> — Ejen Susulan Dokumen Panitia • data rekaan untuk pertandingan</span>' +
+        '<span class="pendek"> • data rekaan</span>';
+      // left/right:0 + margin:auto memusatkan tanpa transform, jadi tidak melimpah ke kanan pada skrin kecil
+      bn.style.cssText = "position:fixed;top:0;left:0;right:0;margin:0 auto;width:max-content;max-width:calc(100% - 16px);" +
+        "box-sizing:border-box;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;z-index:99999;pointer-events:none;" +
         "background:#dc2626;color:#fff;font:800 13px/1 Inter,Arial,sans-serif;letter-spacing:.04em;" +
         "padding:7px 16px;border-radius:0 0 10px 10px;box-shadow:0 4px 14px rgba(0,0,0,.18)";
       document.body.appendChild(bn);
