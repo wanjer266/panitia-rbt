@@ -43,11 +43,11 @@ bina("A_Minit_Mesyuarat_Panitia_RBT_Bil3_2026_DEMO.pdf", "MINIT MESYUARAT PANITI
     ("h", "3.0 Perkara Berbangkit"),
     "Tiada.",
     ("h", "4.0 Program Panitia"),
-    "<b>4.1 Amali Litar Elektrik Tingkatan 2</b><br/>Mesyuarat bersetuju meluluskan Amali Litar Elektrik bagi kelas 2 Amanah. "
+    "<b>4.1 Amali Litar Elektrik Tingkatan 2</b><br/>Mesyuarat bersetuju meluluskan Amali Litar Elektrik bagi kelas 2 Razi. "
     "Amali dilaksanakan semasa waktu PdP RBT pada minggu kedua November 2026.",
     ("t", [["Perkara", "Butiran"],
            ["Status", "DILULUSKAN"],
-           ["Kelas", "2 Amanah"],
+           ["Kelas", "2 Razi"],
            ["Pemilik tindakan", "Cikgu Muhammad Ridhwan"],
            ["Tarikh akhir", "20 November 2026"],
            ["Evidens perlu disediakan", "1) Laporan amali  2) Rekod pengujian litar"]], [140, 300]),
@@ -64,10 +64,10 @@ bina("A_Minit_Mesyuarat_Panitia_RBT_Bil3_2026_DEMO.pdf", "MINIT MESYUARAT PANITI
 ])
 
 # B — Laporan amali (memenuhi "Laporan amali" sahaja)
-bina("B_Laporan_Amali_Litar_Elektrik_2Amanah_DEMO.pdf", "LAPORAN AMALI LITAR ELEKTRIK TINGKATAN 2", [
+bina("B_Laporan_Amali_Litar_Elektrik_2Razi_DEMO.pdf", "LAPORAN AMALI LITAR ELEKTRIK TINGKATAN 2", [
     ("t", [["Perkara", "Butiran"],
            ["Program", "Amali Litar Elektrik Tingkatan 2"],
-           ["Kelas", "2 Amanah"],
+           ["Kelas", "2 Razi"],
            ["Tarikh pelaksanaan", "12 November 2026"],
            ["Guru bertanggungjawab", "Cikgu Muhammad Ridhwan"],
            ["Bilangan murid", "28 orang"]], [150, 290]),
@@ -87,8 +87,8 @@ def rekod(nama, kelas, tarikh, baris):
 
 rows = [["1", "Bersiri", "3.0", "120", "Berfungsi"], ["2", "Selari", "3.0", "240", "Berfungsi"],
         ["3", "Bersiri", "2.9", "118", "Berfungsi"], ["4", "Selari", "3.0", "236", "Dibaiki, berfungsi"]]
-# C — Rekod kelas lain (2 Bestari) -> mesti ke Semakan Guru
-rekod("C_Rekod_Pengujian_Litar_2Bestari_DEMO.pdf", "2 Bestari", "13 November 2026", rows)
-# D — Rekod kelas betul (2 Amanah) -> pautkan, tutup tugasan
-rekod("D_Rekod_Pengujian_Litar_2Amanah_DEMO.pdf", "2 Amanah", "12 November 2026", rows)
+# C — Rekod kelas lain (2 Khaldun) -> mesti ke Semakan Guru
+rekod("C_Rekod_Pengujian_Litar_2Khaldun_DEMO.pdf", "2 Khaldun", "13 November 2026", rows)
+# D — Rekod kelas betul (2 Razi) -> pautkan, tutup tugasan
+rekod("D_Rekod_Pengujian_Litar_2Razi_DEMO.pdf", "2 Razi", "12 November 2026", rows)
 print("siap")
