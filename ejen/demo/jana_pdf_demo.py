@@ -91,4 +91,14 @@ rows = [["1", "Bersiri", "3.0", "120", "Berfungsi"], ["2", "Selari", "3.0", "240
 rekod("C_Rekod_Pengujian_Litar_2Khaldun_DEMO.pdf", "2 Khaldun", "13 November 2026", rows)
 # D — Rekod kelas betul (2 Razi) -> pautkan, tutup tugasan
 rekod("D_Rekod_Pengujian_Litar_2Razi_DEMO.pdf", "2 Razi", "12 November 2026", rows)
+# E — Dokumen tidak berkaitan (Carta Organisasi) -> ejen hanya catat, tiada soalan kepada guru
+bina("E_Carta_Organisasi_Panitia_RBT_2026_DEMO.pdf", "CARTA ORGANISASI PANITIA RBT 2026", [
+    ("t", [["Jawatan", "Nama"],
+           ["Pengerusi", "Pengetua"],
+           ["Penasihat", "Penolong Kanan Akademik"],
+           ["Ketua Panitia", "Cikgu Muhammad Ridhwan"],
+           ["Setiausaha", "Cikgu Aina"],
+           ["Ahli", "Cikgu Farid, Cikgu Nurul"]], [150, 290]),
+    "Carta ini berkuat kuasa mulai Januari 2026.",
+])
 print("siap")
