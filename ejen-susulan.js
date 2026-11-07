@@ -23,6 +23,40 @@
   var kunci = baca("ejenKey");
   var dataPanel = null, pemasaPoll = null, sedangMuat = false;
 
+  /* ---------- Tera air DEMO (syarat pertandingan) ----------
+   * Dipaparkan pada SELURUH halaman apabila mod DEMO dipilih dalam panel,
+   * atau apabila URL mengandungi ?demo=1. Tidak menghalang klik (pointer-events: none).
+   */
+  var paksaDemo = /[?&]demo=1\b/.test(location.search);
+  function kemaskiniTeraAir() {
+    var aktif = paksaDemo || mod === "DEMO";
+    var wm = document.getElementById("ejenTeraAir");
+    var bn = document.getElementById("ejenBannerDemo");
+    if (!aktif) { if (wm) wm.remove(); if (bn) bn.remove(); return; }
+    if (!wm) {
+      var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="360" height="240">' +
+        '<text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" transform="rotate(-30 180 120)" ' +
+        'font-family="Arial, sans-serif" font-size="64" font-weight="900" fill="rgb(220,38,38)" fill-opacity="0.13">DEMO</text></svg>';
+      wm = document.createElement("div");
+      wm.id = "ejenTeraAir";
+      wm.setAttribute("aria-hidden", "true");
+      wm.style.cssText = "position:fixed;inset:0;z-index:99998;pointer-events:none;background-repeat:repeat;" +
+        "background-image:url(\"data:image/svg+xml;utf8," + encodeURIComponent(svg) + "\")";
+      document.body.appendChild(wm);
+    }
+    if (!bn) {
+      bn = document.createElement("div");
+      bn.id = "ejenBannerDemo";
+      bn.setAttribute("role", "status");
+      bn.textContent = "DEMO — Ejen Susulan Mesyuarat Panitia • data rekaan untuk pertandingan";
+      bn.style.cssText = "position:fixed;top:0;left:50%;transform:translateX(-50%);z-index:99999;pointer-events:none;" +
+        "background:#dc2626;color:#fff;font:800 13px/1 Inter,Arial,sans-serif;letter-spacing:.04em;" +
+        "padding:7px 16px;border-radius:0 0 10px 10px;box-shadow:0 4px 14px rgba(0,0,0,.18)";
+      document.body.appendChild(bn);
+    }
+  }
+  kemaskiniTeraAir();
+
   async function ejen(payload) {
     if (!AGENT_URL) throw new Error("AGENT_URL belum ditetapkan dalam config.js.");
     if (!kunci) throw new Error("Masukkan kunci akses ejen dalam panel Susulan Mesyuarat.");
@@ -238,7 +272,7 @@
   }
 
   function pasangAcara() {
-    $("ejenMode").onchange = function (e) { mod = e.target.value === "DEMO" ? "DEMO" : "LIVE"; simpan("ejenMode", mod); dataPanel = null; lukis(); muatPanel(); };
+    $("ejenMode").onchange = function (e) { mod = e.target.value === "DEMO" ? "DEMO" : "LIVE"; simpan("ejenMode", mod); kemaskiniTeraAir(); dataPanel = null; lukis(); muatPanel(); };
     $("ejenKeyBtn").onclick = function () {
       var k = prompt("Masukkan kunci akses ejen (AGENT_KEY daripada Script Properties):", "");
       if (k === null) return;
