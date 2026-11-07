@@ -198,7 +198,13 @@ function updateRow_(name, obj) {
 function withLock_(fn) {
   var lock = LockService.getScriptLock();
   if (!lock.tryLock(30000)) throw new Error('Sistem sibuk. Cuba sebentar lagi.');
-  try { return fn(); } finally { lock.releaseLock(); }
+  try {
+    var hasil = fn();
+    // Wajib: tulis perubahan ke Sheets SEBELUM kunci dilepaskan. Tanpa ini proses lain
+    // (trigger vs "Proses sekarang") boleh membaca status lama dan memproses kerja yang sama.
+    SpreadsheetApp.flush();
+    return hasil;
+  } finally { lock.releaseLock(); }
 }
 
 /**
