@@ -205,7 +205,7 @@
       demo = '<div class="ejenDemo"><b>MOD DEMO</b> — data rekaan untuk pertandingan. PDF disimpan dalam folder DEMO ejen dan rekod ditanda DEMO; tidak bercampur dengan e-Fail sebenar.' +
         '<div class="ejenBar" style="margin-top:8px">' +
         '<select id="ejenDemoAliran" class="control"><option value="MINIT">Minit Mesyuarat</option><option value="EVIDENS">Evidens / Laporan Program</option></select>' +
-        '<input id="ejenDemoKelas" class="control" placeholder="Kelas (cth. 2 Amanah)">' +
+        '<input id="ejenDemoKelas" class="control" placeholder="Kelas (cth. 2 Razi)">' +
         '<input id="ejenDemoFile" class="control" type="file" accept="application/pdf">' +
         '<button class="btn primary small" id="ejenDemoHantar">Hantar ke ejen</button>' +
         '<button class="btn small danger" id="ejenDemoReset">Reset data DEMO</button></div></div>';
