@@ -32,7 +32,7 @@ function enqueueLive_(p) {
   var folder = str_(p.folder, 40, true, 'folder');
   var subtajuk = str_(p.subtopic, 120, true, 'subtopic');
   var aliran = tentukanAliran_(folder, subtajuk);
-  if (!aliran) return { diabaikan: true, sebab: 'Kategori ini bukan dalam skop ejen.' };
+  if (!aliran) return { diabaikan: true, sebab: 'Folder ini bukan sebahagian daripada Fail Utama.' };
 
   var fileId = str_(p.fileId, 100, true, 'fileId');
   if (!/^[-\w]{20,}$/.test(fileId)) throw new Error('ID fail Drive tidak sah.');
@@ -61,6 +61,7 @@ function enqueueDemo_(p) {
   var panitiaId = panitiaWajib_(p.panitiaId);
   var aliran = str_(p.aliran, 10, true, 'aliran');
   if (!DEMO_LOKASI[aliran]) throw new Error('Aliran DEMO tidak sah.');
+  if (aliran === 'MINIT') aliran = 'ARAHAN';
   var b64 = p.base64;
   if (typeof b64 !== 'string' || !b64) throw new Error('PDF DEMO tiada.');
   var bytes;

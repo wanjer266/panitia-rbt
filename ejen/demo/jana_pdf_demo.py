@@ -1,4 +1,4 @@
-"""Jana 4 PDF DEMO (data rekaan) untuk senario A–D Ejen Susulan Mesyuarat Panitia."""
+"""Jana 4 PDF DEMO (data rekaan) untuk senario A–D Ejen Susulan Dokumen Panitia."""
 import sys, os
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle

@@ -8,7 +8,7 @@
 
 function doGet() {
   // Semakan kesihatan sahaja. Tiada data didedahkan.
-  return json_({ ok: true, data: { nama: 'Ejen Susulan Mesyuarat Panitia', versi: EJEN.VERSI } });
+  return json_({ ok: true, data: { nama: 'Ejen Susulan Dokumen Panitia', versi: EJEN.VERSI } });
 }
 
 function doPost(e) {

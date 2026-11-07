@@ -3,7 +3,7 @@
  * PERATURAN KESELAMATAN (dikuatkuasakan di pelayan, bukan bergantung pada model):
  *  - Skop panitia, mod (LIVE/DEMO), tahun dan ID fail diambil daripada KERJA, bukan input model.
  *  - Model tidak boleh memadam, mengubah akses, memilih fail lain atau menjalankan kod.
- *  - Tugasan hanya boleh dicipta daripada aliran MINIT, untuk keputusan "Diluluskan".
+ *  - Tugasan hanya boleh dicipta daripada dokumen ARAHAN (minit, perancangan, kertas kerja, post mortem), untuk keputusan "Diluluskan".
  *  - Evidens hanya boleh dipautkan daripada aliran EVIDENS; kelas bercanggah ditolak.
  *  - Tugasan hanya boleh ditutup jika semua item senarai semak sudah dipenuhi.
  *  - Setiap tulisan menggunakan kunci tindakan stabil -> pemprosesan semula tidak mencipta rekod berganda.
@@ -14,7 +14,7 @@ var SEBAB_PROP = { type: 'string', description: 'Sebab ringkas berdasarkan bukti
 var DEFINISI_ALAT = [
   {
     name: 'baca_maklumat_fail',
-    description: 'Baca metadata fail yang sedang diproses: aliran (MINIT/EVIDENS), panitia, kategori, kelas yang dipilih guru semasa muat naik, tajuk, tahun dan berapa kali fail ini telah diproses. PDF itu sendiri sudah dilampirkan dalam mesej pertama.',
+    description: 'Baca metadata fail yang sedang diproses: aliran (ARAHAN/EVIDENS), panitia, kategori, kelas yang dipilih guru semasa muat naik, tajuk, tahun dan berapa kali fail ini telah diproses. PDF itu sendiri sudah dilampirkan dalam mesej pertama.',
     input_schema: { type: 'object', properties: { sebab: SEBAB_PROP }, required: ['sebab'] }
   },
   {
@@ -40,16 +40,16 @@ var DEFINISI_ALAT = [
   },
   {
     name: 'cipta_atau_kemaskini_tugasan',
-    description: 'HANYA untuk minit mesyuarat. Cipta tugasan bagi keputusan yang DILULUSKAN dan memerlukan tindakan, atau kemas kini tugasan sedia ada bagi program yang sama. Semua medan mesti diambil daripada PDF; jangan reka. Jika pemilik, tarikh akhir atau evidens tidak dinyatakan dengan jelas, jangan panggil alat ini; buka Semakan Guru.',
+    description: 'HANYA untuk dokumen ARAHAN (minit mesyuarat, perancangan aktiviti, kertas kerja, post mortem). Cipta tugasan bagi keputusan atau arahan yang DILULUSKAN dan memerlukan tindakan, atau kemas kini tugasan sedia ada bagi program yang sama. Semua medan mesti diambil daripada PDF; jangan reka. Jika pemilik, tarikh akhir atau evidens tidak dinyatakan dengan jelas, jangan panggil alat ini; buka Semakan Guru.',
     input_schema: { type: 'object', properties: {
-      program: { type: 'string', description: 'Nama program seperti dalam minit.' },
+      program: { type: 'string', description: 'Nama program/tindakan seperti dalam dokumen.' },
       status_keputusan: { type: 'string', enum: ['Diluluskan', 'Cadangan', 'Makluman'] },
-      keputusan: { type: 'string', description: 'Ringkasan keputusan mesyuarat.' },
+      keputusan: { type: 'string', description: 'Ringkasan keputusan atau arahan.' },
       tingkatan: { type: 'string', description: 'Cth. "2". Kosong jika tiada.' },
       kelas: { type: 'string', description: 'Cth. "2 Amanah". Kosong jika minit tidak menyatakan kelas.' },
       pemilik: { type: 'string', description: 'Nama pemilik tindakan seperti dalam minit.' },
       tarikh_akhir: { type: 'string', description: 'Format YYYY-MM-DD.' },
-      evidens_diperlukan: { type: 'array', items: { type: 'string' }, description: 'Senarai evidens yang perlu disediakan seperti dinyatakan dalam minit.' },
+      evidens_diperlukan: { type: 'array', items: { type: 'string' }, description: 'Senarai evidens yang perlu disediakan seperti dinyatakan dalam dokumen.' },
       halaman: { type: 'integer', description: 'Nombor halaman PDF tempat keputusan ditemui.' },
       petikan: { type: 'string', description: 'Petikan tepat dan pendek (maks 30 patah perkataan) daripada PDF.' },
       sebab: SEBAB_PROP
@@ -57,7 +57,7 @@ var DEFINISI_ALAT = [
   },
   {
     name: 'pautkan_evidens',
-    description: 'HANYA untuk aliran EVIDENS. Pautkan fail PDF yang sedang diproses kepada satu item senarai semak tugasan, jika kandungan PDF benar-benar memenuhi item itu dan program, kelas dan tarikh sepadan.',
+    description: 'HANYA untuk aliran EVIDENS (semua dokumen bukan arahan). Pautkan fail PDF yang sedang diproses kepada satu item senarai semak tugasan, jika kandungan PDF benar-benar memenuhi item itu dan program, kelas dan tarikh sepadan.',
     input_schema: { type: 'object', properties: {
       taskId: { type: 'string' },
       itemId: { type: 'string' },
@@ -185,14 +185,14 @@ var ALAT = {
 
   cipta_atau_kemaskini_tugasan: function (ctx, inp) {
     var j = ctx.job;
-    if (j.aliran !== 'MINIT') throw new Error('Tugasan hanya boleh dicipta daripada minit mesyuarat. Untuk evidens, gunakan pautkan_evidens atau buka_semakan_guru.');
+    if (!alirArahan_(j.aliran)) throw new Error('Tugasan hanya boleh dicipta daripada dokumen arahan (minit, perancangan, kertas kerja, post mortem). Untuk dokumen lain, gunakan pautkan_evidens.');
     if (inp.status_keputusan !== 'Diluluskan') throw new Error('Keputusan berstatus "' + inp.status_keputusan + '" tidak boleh dijadikan tugasan. Hanya keputusan Diluluskan.');
     var program = teks_(inp.program, 150);
     var pemilik = teks_(inp.pemilik, 120);
     var tarikh = teks_(inp.tarikh_akhir, 10);
     if (!program) throw new Error('Nama program wajib.');
-    if (!pemilik) throw new Error('Pemilik tiada dalam minit. Buka Semakan Guru.');
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(tarikh) || isNaN(new Date(tarikh + 'T00:00:00Z'))) throw new Error('Tarikh akhir tidak jelas (perlu YYYY-MM-DD). Buka Semakan Guru jika minit tidak menyatakannya.');
+    if (!pemilik) throw new Error('Pemilik tiada dalam dokumen. Buka Semakan Guru.');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(tarikh) || isNaN(new Date(tarikh + 'T00:00:00Z'))) throw new Error('Tarikh akhir tidak jelas (perlu YYYY-MM-DD). Buka Semakan Guru jika dokumen tidak menyatakannya.');
     var evidens = (Array.isArray(inp.evidens_diperlukan) ? inp.evidens_diperlukan : [])
       .map(function (s) { return teks_(s, 120); }).filter(Boolean).slice(0, 10);
     if (!evidens.length) throw new Error('Senarai evidens tiada. Buka Semakan Guru untuk bertanya evidens yang diperlukan.');
@@ -235,7 +235,7 @@ var ALAT = {
 
   pautkan_evidens: function (ctx, inp) {
     var j = ctx.job;
-    if (j.aliran !== 'EVIDENS') throw new Error('Evidens hanya dipautkan daripada muat naik Laporan & Program / Evidens.');
+    if (j.aliran !== 'EVIDENS') throw new Error('Dokumen arahan tidak dipautkan sebagai evidens. Gunakan cipta_atau_kemaskini_tugasan.');
     var t = tugasanDalamSkop_(ctx, inp.taskId);
     var item = findById_('SenaraiSemak', 'itemId', String(inp.itemId || ''));
     if (!item || item.taskId !== t.taskId) throw new Error('Item ' + inp.itemId + ' bukan milik tugasan ' + t.taskId + '.');

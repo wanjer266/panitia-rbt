@@ -1,6 +1,13 @@
-# Ejen Susulan Mesyuarat Panitia — Panduan
+# Ejen Susulan Dokumen Panitia — Panduan
 
-Modul tambahan untuk e-Fail Multi-Panitia (`wanjer266/panitia-rbt`). Ejen membaca PDF minit dan evidens menggunakan Claude, kemudian mengurus tugasan susulan dari keputusan mesyuarat sehingga tindakan lengkap.
+Modul tambahan untuk e-Fail Multi-Panitia (`wanjer266/panitia-rbt`). Ejen membaca **setiap PDF yang dimuat naik ke Fail Utama** (5 folder: Pengurusan, Mesyuarat, Program & Profesional, Pentaksiran, Kurikulum) menggunakan Claude.
+
+| Jenis dokumen | Contoh | Apa ejen buat |
+|---|---|---|
+| **Dokumen arahan** | Minit Mesyuarat Panitia, Rumusan Perancangan Aktiviti Tahunan, Kertas Kerja Program Panitia, Laporan Post Mortem Peperiksaan | Cari keputusan/arahan yang diluluskan → cipta tindakan susulan (pemilik, tarikh akhir, senarai bukti). |
+| **Bukti kerja** | Semua dokumen lain: laporan program, PLC, evidens amali/projek, PBD, RPH, RPT, bank soalan, surat, carta organisasi… | Padankan dengan tindakan yang masih terbuka → tanda bukti dipenuhi → tutup bila lengkap. Jika tiada kaitan, ejen hanya catat dan tidak mengganggu guru. Guru hanya ditanya bila ada percanggahan (contoh: kelas tak sama). |
+
+Peta ini ditetapkan dalam `Config.gs` (`FOLDER_FAIL_UTAMA`, `SUBTAJUK_ARAHAN`). Kerja lama berlabel `MINIT` dianggap sama dengan `ARAHAN`.
 
 ---
 
@@ -23,7 +30,7 @@ Modul tambahan untuk e-Fail Multi-Panitia (`wanjer266/panitia-rbt`). Ejen membac
 - Projek Apps Script **baharu dan berasingan** untuk ejen, dengan Google Sheet dan folder DEMO sendiri.
 - `ejen-susulan.js` dimuatkan selepas skrip utama dan membalut dua fungsi global:
   - `apiPost` — selepas `uploadPdf` berjaya, ejen kenal pasti dokumen baharu dalam `state.documents` dan ambil ID fail Drive daripada `viewUrl`/`downloadUrl`. Kemudian ia panggil `enqueue` pada Web App ejen. Guru terus nampak status **Menunggu semakan**.
-  - `showFolder` — papar panel **Susulan Mesyuarat** di bawah tab Mesyuarat, Program dan Pentaksiran.
+  - `showFolder` — papar panel **Susulan Dokumen** di bawah semua tab Fail Utama.
 - Ejen di pelayan membuka PDF terus dari Drive menggunakan ID itu. Syaratnya, ejen mesti di-deploy oleh **akaun yang sama** yang memiliki folder e-Fail.
 
 ---
@@ -106,13 +113,13 @@ PDF dilampirkan sebagai blok `document` dalam mesej pertama (alat "baca PDF") da
 ## 4. Setup
 
 ### 4.1 Projek Apps Script ejen
-1. Log masuk dengan **akaun MOE yang memiliki folder e-Fail**. Pergi ke script.google.com → **Projek baharu** → namakan *Ejen Susulan Mesyuarat Panitia*.
+1. Log masuk dengan **akaun MOE yang memiliki folder e-Fail**. Pergi ke script.google.com → **Projek baharu** → namakan *Ejen Susulan Dokumen Panitia*.
 2. Project Settings → tandakan **Show "appsscript.json"**. Tampal kandungan `appsscript.json`.
 3. Cipta fail `Config`, `Store`, `Api`, `Queue`, `Claude`, `Tools`, `Agent` dan `Setup`, kemudian tampal kod setiap satu.
 4. **Script Properties** (Project Settings → Script Properties):
    - `CLAUDE_API_KEY` = API key daripada console Anthropic (platform.claude.com).
    - `ROOT_FOLDER_ID` = ID folder induk e-Fail di Drive (bahagian URL selepas `/folders/`). Disyorkan, supaya ejen hanya memproses PDF dalam folder itu.
-5. Jalankan `setupEjen` dan benarkan akses. Lihat **Execution log**. Ia mencipta Sheet *Ejen Susulan Mesyuarat Panitia – Data*, folder DEMO dan `AGENT_KEY` (salin kunci ini). Fungsi ni selamat dijalankan semula.
+5. Jalankan `setupEjen` dan benarkan akses. Lihat **Execution log**. Ia mencipta Sheet *Ejen Susulan Dokumen Panitia – Data*, folder DEMO dan `AGENT_KEY` (salin kunci ini). Fungsi ni selamat dijalankan semula.
 6. Jalankan `ujiSambunganClaude`. Log patut menunjukkan nama model.
 7. Jalankan `pasangTrigger` untuk memasang trigger `processQueue` setiap 1 minit (tiada trigger berganda).
 
@@ -124,7 +131,7 @@ Selepas kod diubah, gunakan **Manage deployments → Edit → New version** supa
 ### 4.3 Frontend (repo `panitia-rbt`)
 1. Tambah `ejen-susulan.js` di root repo.
 2. Patch `index.html` dan `config.js` (lihat seksyen 2).
-3. Commit dan push. Buka dashboard → Mesyuarat Panitia → panel **Susulan Mesyuarat** → **Masukkan kunci akses** → tampal `AGENT_KEY`. Kunci disimpan dalam `localStorage` pelayar itu sahaja.
+3. Commit dan push. Buka dashboard → Mesyuarat Panitia → panel **Susulan Dokumen** → **Masukkan kunci akses** → tampal `AGENT_KEY`. Kunci disimpan dalam `localStorage` pelayar itu sahaja.
 
 ### 4.4 Menambah panitia baharu
 Tambah baris dalam helaian `Panitia` (`panitiaId`, `nama`, `aktif=YA`) dan butang `data-subject` dalam `index.html`. Modul ejen tak perlu diubah.

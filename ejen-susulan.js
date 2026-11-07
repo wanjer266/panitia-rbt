@@ -1,20 +1,18 @@
-/* Ejen Susulan Mesyuarat Panitia — modul frontend
+/* Ejen Susulan Dokumen Panitia — modul frontend
  * Dimuatkan SELEPAS skrip utama index.html. Tidak mengubah fungsi asal:
  *  - membalut apiPost()  : selepas uploadPdf berjaya, hantar fail ke giliran ejen
- *  - membalut showFolder(): papar panel "Susulan Mesyuarat" dalam tab Mesyuarat / Program / Pentaksiran
+ *  - membalut showFolder(): papar panel "Susulan Dokumen" dalam semua tab Fail Utama
  * Menggunakan global sedia ada: state, currentSubject, currentYear, currentFolder, apiGet, toast, esc, $
  */
 (function () {
   "use strict";
   var AGENT_URL = (window.APP_CONFIG && window.APP_CONFIG.AGENT_URL) || "";
   if (AGENT_URL.indexOf("PASTE_") >= 0) AGENT_URL = "";
-  var FOLDER_PANEL = ["mesyuarat", "profesional", "pentaksiran"];
-  // Mesti sepadan dengan ALIRAN dalam Config.gs (pelayan tetap mengesahkan).
-  var SKOP_UPLOAD = {
-    "mesyuarat": ["Minit Mesyuarat Panitia"],
-    "profesional": ["Laporan Program Panitia"],
-    "pentaksiran": ["Evidens Amali", "Evidens Projek"]
-  };
+  // Semua folder Fail Utama. Pelayan (Config.gs) menentukan sama ada dokumen itu ARAHAN atau EVIDENS.
+  var FOLDER_PANEL = ["pengurusan", "mesyuarat", "profesional", "pentaksiran", "kurikulum"];
+  var SUBTAJUK_ARAHAN = ["Minit Mesyuarat Panitia", "Rumusan Perancangan Aktiviti Tahunan", "Kertas Kerja Program Panitia", "Laporan Post Mortem Peperiksaan"];
+  function dalamSkop(meta) { return !!meta && FOLDER_PANEL.indexOf(meta.folder) >= 0; }
+  function labelAliran(a) { return (a === "ARAHAN" || a === "MINIT") ? "Dokumen arahan" : "Bukti kerja"; }
 
   function simpan(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
   function baca(k) { try { return localStorage.getItem(k) || ""; } catch (e) { return ""; } }
@@ -48,7 +46,7 @@
       bn = document.createElement("div");
       bn.id = "ejenBannerDemo";
       bn.setAttribute("role", "status");
-      bn.textContent = "DEMO — Ejen Susulan Mesyuarat Panitia • data rekaan untuk pertandingan";
+      bn.textContent = "DEMO — Ejen Susulan Dokumen Panitia • data rekaan untuk pertandingan";
       bn.style.cssText = "position:fixed;top:0;left:50%;transform:translateX(-50%);z-index:99999;pointer-events:none;" +
         "background:#dc2626;color:#fff;font:800 13px/1 Inter,Arial,sans-serif;letter-spacing:.04em;" +
         "padding:7px 16px;border-radius:0 0 10px 10px;box-shadow:0 4px 14px rgba(0,0,0,.18)";
@@ -59,7 +57,7 @@
 
   async function ejen(payload) {
     if (!AGENT_URL) throw new Error("AGENT_URL belum ditetapkan dalam config.js.");
-    if (!kunci) throw new Error("Masukkan kunci akses ejen dalam panel Susulan Mesyuarat.");
+    if (!kunci) throw new Error("Masukkan kunci akses ejen dalam panel Susulan Dokumen.");
     var body = new URLSearchParams();
     payload.key = kunci;
     body.set("payload", JSON.stringify(payload));
@@ -85,8 +83,8 @@
   }
 
   async function hantarUploadKeEjen(meta, idSebelum) {
-    if (!meta || !SKOP_UPLOAD[meta.folder] || SKOP_UPLOAD[meta.folder].indexOf(meta.subtopic) < 0) return;
-    if (!AGENT_URL || !kunci) { toast("PDF disimpan. Ejen belum disambung (tetapkan kunci dalam panel Susulan Mesyuarat)."); return; }
+    if (!dalamSkop(meta)) return;
+    if (!AGENT_URL || !kunci) { toast("PDF disimpan. Ejen belum disambung (tetapkan kunci dalam panel Susulan Dokumen)."); return; }
     var docs = (state.documents || []);
     var baru = docs.filter(function (d) { return !idSebelum.has(String(d.id)); });
     if (!baru.length) { await apiGet(); docs = state.documents || []; baru = docs.filter(function (d) { return !idSebelum.has(String(d.id)); }); }
@@ -106,7 +104,7 @@
       folder: meta.folder, subtopic: meta.subtopic, classId: meta.classId ? String(meta.classId) : "", className: kelas,
       title: meta.title, fileName: meta.fileName, year: String(meta.year || currentYear) });
     if (hasil && hasil.diabaikan) return;
-    toast("Ejen: fail masuk giliran — Menunggu semakan.");
+    toast("Ejen akan baca dokumen ini sebentar lagi.");
     if (mod === "LIVE") muatPanel();
   }
 
@@ -131,7 +129,7 @@
     };
   }
 
-  /* ---------- 2. Panel Susulan Mesyuarat ---------- */
+  /* ---------- 2. Panel Susulan Dokumen ---------- */
 
   var css = document.createElement("style");
   css.textContent = [
@@ -175,7 +173,7 @@
 
   function htmlLog(logs) {
     if (!logs.length) return "";
-    return "<details><summary>Sejarah tindakan ejen (" + logs.length + ")</summary>" + logs.map(function (l) {
+    return "<details><summary>Apa yang ejen buat (" + logs.length + ")</summary>" + logs.map(function (l) {
       return '<div class="log' + (l.ralat ? " err" : "") + '"><code>' + esc(l.alat) + "</code> langkah " + esc(l.langkah) +
         " • " + esc(l.sebab || "") + (l.ralat ? "<br>Ditolak: " + esc(l.ralat) : "") + '<div class="meta">' + tarikh(l.at) + "</div></div>";
     }).join("") + "</details>";
@@ -191,20 +189,20 @@
 
   function lukis() {
     var p = pastikanPanel(), d = dataPanel;
-    var bar = '<div class="panelHead"><h3>Susulan Mesyuarat</h3>' +
+    var bar = '<div class="panelHead"><h3>Susulan Dokumen</h3>' +
       (mod === "DEMO" ? '<span class="badge warn">MOD DEMO</span>' : '<span class="badge">' + esc(currentSubject) + "</span>") + "</div>" +
       '<div class="ejenBar">' +
       '<select id="ejenMode" class="control"><option value="LIVE">Data sebenar</option><option value="DEMO">DEMO (data rekaan)</option></select>' +
       '<button class="btn small" id="ejenKeyBtn">' + (kunci ? "Tukar kunci akses" : "Masukkan kunci akses") + "</button>" +
       '<button class="btn small" id="ejenRefresh">Muat semula</button>' +
-      '<button class="btn primary small" id="ejenRunNow">Proses sekarang</button>' +
+      '<button class="btn primary small" id="ejenRunNow">Baca sekarang</button>' +
       '<span class="meta" id="ejenInfo"></span></div>';
 
     var demo = "";
     if (mod === "DEMO") {
       demo = '<div class="ejenDemo"><b>MOD DEMO</b> — data rekaan untuk pertandingan. PDF disimpan dalam folder DEMO ejen dan rekod ditanda DEMO; tidak bercampur dengan e-Fail sebenar.' +
         '<div class="ejenBar" style="margin-top:8px">' +
-        '<select id="ejenDemoAliran" class="control"><option value="MINIT">Minit Mesyuarat</option><option value="EVIDENS">Evidens / Laporan Program</option></select>' +
+        '<select id="ejenDemoAliran" class="control"><option value="ARAHAN">Dokumen arahan (minit, kertas kerja…)</option><option value="EVIDENS">Bukti kerja (laporan, evidens…)</option></select>' +
         '<input id="ejenDemoKelas" class="control" placeholder="Kelas (cth. 2 Razi)">' +
         '<input id="ejenDemoFile" class="control" type="file" accept="application/pdf">' +
         '<button class="btn primary small" id="ejenDemoHantar">Hantar ke ejen</button>' +
@@ -227,8 +225,8 @@
     var kesTerbuka = (d.kes || []).filter(function (k) { return k.status === "Menunggu Guru"; });
     var kesHtml = kesTerbuka.length ? kesTerbuka.map(function (k) {
       var job = (d.kerja || []).find(function (j) { return j.jobId === k.jobId; }) || {};
-      return '<div class="listItem kes"><div class="listTitle">Semakan Guru: ' + esc(job.namaFail || job.tajuk || k.jobId) + "</div>" +
-        '<div class="notes">' + esc(k.soalan) + "</div>" + (k.sebab ? '<div class="meta">Sebab ejen: ' + esc(k.sebab) + "</div>" : "") +
+      return '<div class="listItem kes"><div class="listTitle">Perlu keputusan cikgu: ' + esc(job.namaFail || job.tajuk || k.jobId) + "</div>" +
+        '<div class="notes">' + esc(k.soalan) + "</div>" + (k.sebab ? '<div class="meta">Kenapa ejen bertanya: ' + esc(k.sebab) + "</div>" : "") +
         '<div class="actions">' + (k.pilihan || []).map(function (op) {
           return '<button class="btn small ejenJawab" data-case="' + esc(k.caseId) + '" data-jawapan="' + esc(op) + '">' + esc(op) + "</button>";
         }).join("") +
@@ -236,7 +234,7 @@
         '<textarea class="control" id="ejenTxt_' + esc(k.caseId) + '" placeholder="Atau tulis jawapan khusus…"></textarea>' +
         '<button class="btn primary small ejenJawabTeks" data-case="' + esc(k.caseId) + '">Hantar jawapan</button>' +
         htmlLog(logs.filter(function (l) { return l.jobId === k.jobId; })) + "</div>";
-    }).join("") : '<div class="empty">Tiada kes menunggu guru.</div>';
+    }).join("") : '<div class="empty">Tiada apa-apa yang perlu cikgu semak.</div>';
 
     var tugasan = (d.tugasan || []).slice().sort(function (a, b) { return (a.status === "Lengkap") - (b.status === "Lengkap") || String(a.tarikhAkhir).localeCompare(String(b.tarikhAkhir)); });
     var tgsHtml = tugasan.length ? tugasan.map(function (t) {
@@ -249,26 +247,26 @@
       return '<div class="listItem"><div class="listTitle">' + esc(t.program) + (t.kelas ? " • " + esc(t.kelas) : "") + "</div>" +
         '<div class="meta">Pemilik: ' + esc(t.pemilik) + " • Tarikh akhir: " + esc(t.tarikhAkhir) + " • " + esc(t.tahun) + "</div>" +
         '<div class="statusRow">' + badge(t.status) + "</div>" +
-        (t.petikan ? '<div class="quote">Minit' + (t.halaman ? " hlm. " + esc(t.halaman) : "") + ": “" + esc(t.petikan) + "”</div>" : "") +
+        (t.petikan ? '<div class="quote">Dokumen asal' + (t.halaman ? " hlm. " + esc(t.halaman) : "") + ": “" + esc(t.petikan) + "”</div>" : "") +
         '<div style="margin-top:6px">' + (items || '<div class="meta">Tiada senarai semak.</div>') + "</div>" +
         htmlLog(logs.filter(function (l) { return l.taskId === t.taskId; })) + "</div>";
-    }).join("") : '<div class="empty">Belum ada tugasan susulan.</div>';
+    }).join("") : '<div class="empty">Belum ada tindakan yang perlu disusuli.</div>';
 
     var kerjaHtml = (d.kerja || []).length ? d.kerja.map(function (j) {
       return '<div class="listItem"><div class="listTitle">' + esc(j.namaFail || j.tajuk) + "</div>" +
-        '<div class="meta">' + esc(j.aliran === "MINIT" ? "Minit mesyuarat" : "Evidens") + (j.kelas ? " • " + esc(j.kelas) : "") +
-        " • diproses " + esc(j.kaliProses || 0) + "x • " + tarikh(j.updatedAt) + "</div>" +
+        '<div class="meta">' + esc(labelAliran(j.aliran)) + (j.kelas ? " • " + esc(j.kelas) : "") +
+        " • dibaca " + esc(j.kaliProses || 0) + "x • " + tarikh(j.updatedAt) + "</div>" +
         '<div class="statusRow">' + badge(j.status) + "</div>" +
         (j.ringkasan ? '<div class="notes">' + esc(j.ringkasan) + "</div>" : "") +
         (j.lastError ? '<div class="notes" style="color:var(--danger)">' + esc(j.lastError) + "</div>" : "") +
         '<div class="actions">' + pautanDrive(j.fileId, "Buka PDF", "btn small") +
-        (j.status !== "Diproses" ? ' <button class="btn small ejenSemula" data-job="' + esc(j.jobId) + '">Proses semula</button>' : "") + "</div>" +
+        (j.status !== "Diproses" ? ' <button class="btn small ejenSemula" data-job="' + esc(j.jobId) + '">Baca semula</button>' : "") + "</div>" +
         htmlLog(logs.filter(function (l) { return l.jobId === j.jobId; })) + "</div>";
-    }).join("") : '<div class="empty">Tiada fail dalam giliran.</div>';
+    }).join("") : '<div class="empty">Belum ada dokumen dibaca ejen.</div>';
 
-    return "<h4>Semakan Guru</h4><div class=\"list\">" + kesHtml + "</div>" +
-      '<div class="ejenGrid"><div><h4>Tugasan susulan</h4><div class="list">' + tgsHtml + "</div></div>" +
-      '<div><h4>Giliran & tindakan ejen</h4><div class="list">' + kerjaHtml + "</div></div></div>";
+    return "<h4>① Perlu keputusan cikgu</h4><div class=\"list\">" + kesHtml + "</div>" +
+      '<div class="ejenGrid"><div><h4>② Tindakan & bukti</h4><div class="list">' + tgsHtml + "</div></div>" +
+      '<div><h4>③ Dokumen yang dibaca ejen</h4><div class="list">' + kerjaHtml + "</div></div></div>";
   }
 
   function pasangAcara() {
@@ -280,9 +278,9 @@
     };
     $("ejenRefresh").onclick = function () { muatPanel(); };
     $("ejenRunNow").onclick = async function (e) {
-      var b = e.target; b.disabled = true; b.textContent = "Ejen sedang memproses…";
+      var b = e.target; b.disabled = true; b.textContent = "Ejen sedang membaca…";
       try { dataPanel = await ejen({ action: "processNow", panitiaId: currentSubject, mode: mod }); lukis(); jadualPoll(); }
-      catch (err) { toast(err.message); } finally { b.disabled = false; b.textContent = "Proses sekarang"; }
+      catch (err) { toast(err.message); } finally { b.disabled = false; b.textContent = "Baca sekarang"; }
     };
     document.querySelectorAll("#ejenPanel .ejenJawab").forEach(function (b) {
       b.onclick = function () { jawab(b.getAttribute("data-case"), b.getAttribute("data-jawapan")); };
@@ -296,7 +294,7 @@
     });
     document.querySelectorAll("#ejenPanel .ejenSemula").forEach(function (b) {
       b.onclick = async function () {
-        try { dataPanel = await ejen({ action: "reprocess", jobId: b.getAttribute("data-job"), panitiaId: currentSubject, mode: mod }); lukis(); toast("Fail dimasukkan semula ke giliran."); jadualPoll(); }
+        try { dataPanel = await ejen({ action: "reprocess", jobId: b.getAttribute("data-job"), panitiaId: currentSubject, mode: mod }); lukis(); toast("Ejen akan baca semula dokumen ini."); jadualPoll(); }
         catch (err) { toast(err.message); }
       };
     });
@@ -324,7 +322,7 @@
       var base64 = await fileToBase64(f);
       await ejen({ action: "demoUpload", panitiaId: currentSubject, aliran: $("ejenDemoAliran").value,
         className: $("ejenDemoKelas").value.trim(), fileName: f.name, title: f.name.replace(/\.pdf$/i, ""), base64: base64 });
-      toast("DEMO: fail masuk giliran — Menunggu semakan.");
+      toast("DEMO: ejen akan baca dokumen ini sebentar lagi.");
       await muatPanel(); jadualPoll();
     } catch (err) { toast(err.message); } finally { b.disabled = false; b.textContent = "Hantar ke ejen"; }
   }

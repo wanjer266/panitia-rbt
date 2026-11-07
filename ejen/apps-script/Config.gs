@@ -1,5 +1,5 @@
 /**
- * Ejen Susulan Mesyuarat Panitia — Konfigurasi
+ * Ejen Susulan Dokumen Panitia — Konfigurasi
  * Projek Apps Script BERASINGAN daripada backend e-Fail sedia ada.
  * Semua rahsia disimpan dalam Script Properties (bukan dalam kod).
  *
@@ -30,21 +30,25 @@ var EJEN = {
 };
 
 /**
- * Peta aliran: folder + subtajuk dashboard -> aliran ejen.
- * Nilai folder/subtajuk diambil terus daripada STRUCTURE dalam index.html.
- * Tidak bergantung pada panitia; panitia dikawal oleh helaian "Panitia".
+ * Peta aliran: setiap dokumen di Fail Utama diproses.
+ *  - ARAHAN : dokumen yang mengandungi keputusan/arahan yang perlu disusuli -> tugasan
+ *  - EVIDENS: semua dokumen lain -> dipadankan sebagai bukti kepada tugasan terbuka
+ * Folder dan subtajuk diambil terus daripada STRUCTURE dalam index.html.
  */
-var ALIRAN = [
-  { aliran: 'MINIT',   folder: 'mesyuarat',   subtajuk: ['Minit Mesyuarat Panitia'] },
-  { aliran: 'EVIDENS', folder: 'profesional', subtajuk: ['Laporan Program Panitia'] },
-  { aliran: 'EVIDENS', folder: 'pentaksiran', subtajuk: ['Evidens Amali', 'Evidens Projek'] }
+var FOLDER_FAIL_UTAMA = ['pengurusan', 'mesyuarat', 'profesional', 'pentaksiran', 'kurikulum'];
+var SUBTAJUK_ARAHAN = [
+  'Minit Mesyuarat Panitia',
+  'Rumusan Perancangan Aktiviti Tahunan',
+  'Kertas Kerja Program Panitia',
+  'Laporan Post Mortem Peperiksaan'
 ];
 
 /** Lokasi lalai bagi muat naik DEMO (tidak masuk ke e-Fail sebenar). */
 var DEMO_LOKASI = {
-  MINIT:   { folder: 'mesyuarat',   subtajuk: 'Minit Mesyuarat Panitia' },
+  ARAHAN:  { folder: 'mesyuarat',   subtajuk: 'Minit Mesyuarat Panitia' },
   EVIDENS: { folder: 'pentaksiran', subtajuk: 'Evidens Amali' }
 };
+DEMO_LOKASI.MINIT = DEMO_LOKASI.ARAHAN;   // serasi dengan versi lama
 
 var STATUS_KERJA = {
   MENUNGGU: 'Menunggu semakan',
@@ -71,12 +75,12 @@ function norm_(s) {
 function normKelas_(s) { return norm_(s).replace(/\s+/g, ''); }
 
 function tentukanAliran_(folder, subtajuk) {
-  for (var i = 0; i < ALIRAN.length; i++) {
-    var a = ALIRAN[i];
-    if (a.folder === folder && a.subtajuk.indexOf(subtajuk) >= 0) return a.aliran;
-  }
-  return null;
+  if (FOLDER_FAIL_UTAMA.indexOf(folder) < 0) return null;
+  return SUBTAJUK_ARAHAN.indexOf(subtajuk) >= 0 ? 'ARAHAN' : 'EVIDENS';
 }
+
+/** Kerja lama mungkin berlabel MINIT; dianggap sama dengan ARAHAN. */
+function alirArahan_(aliran) { return aliran === 'ARAHAN' || aliran === 'MINIT'; }
 
 function panitiaAktif_(panitiaId) {
   var rows = readAll_('Panitia');

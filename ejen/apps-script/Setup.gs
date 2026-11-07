@@ -14,7 +14,7 @@ function setupEjen() {
   var ss = null;
   if (ssId) { try { ss = SpreadsheetApp.openById(ssId); } catch (e) { ss = null; } }
   if (!ss) {
-    ss = SpreadsheetApp.create('Ejen Susulan Mesyuarat Panitia – Data');
+    ss = SpreadsheetApp.create('Ejen Susulan Dokumen Panitia – Data');
     props.setProperty('SHEET_ID', ss.getId());
     log.push('Sheet baharu dicipta: ' + ss.getUrl());
   } else {
@@ -67,7 +67,7 @@ function setupEjen() {
   if (!props.getProperty('AGENT_KEY')) {
     var key = Utilities.getUuid().replace(/-/g, '') + Utilities.getUuid().replace(/-/g, '').slice(0, 8);
     props.setProperty('AGENT_KEY', key);
-    log.push('AGENT_KEY dijana: ' + key + '  (salin ke panel Susulan Mesyuarat)');
+    log.push('AGENT_KEY dijana: ' + key + '  (salin ke panel Susulan Dokumen)');
   } else {
     log.push('AGENT_KEY sedia ada (lihat Script Properties).');
   }
