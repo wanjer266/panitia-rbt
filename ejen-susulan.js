@@ -66,6 +66,14 @@
   }
   kemaskiniTeraAir();
 
+  // Paparan telefon: lajur grid .app ikut lebar skrin (tanpa ini, nama fail panjang menolak halaman melebihi skrin)
+  if (!document.getElementById("ejenGayaTelefon")) {
+    var gt = document.createElement("style");
+    gt.id = "ejenGayaTelefon";
+    gt.textContent = "@media(max-width:1050px){.app{grid-template-columns:minmax(0,1fr)}.main{min-width:0}}";
+    document.head.appendChild(gt);
+  }
+
   async function ejen(payload) {
     if (!AGENT_URL) throw new Error("AGENT_URL belum ditetapkan dalam config.js.");
     if (!kunci) throw new Error("Masukkan kunci akses ejen dalam panel Susulan Dokumen.");
@@ -157,7 +165,14 @@
     "#ejenPanel .log{border-top:1px dashed var(--line);padding:4px 0} #ejenPanel .log code{font-size:11px;background:#eef1f5;padding:1px 5px;border-radius:5px}",
     "#ejenPanel .log.err{color:var(--danger)}",
     "#ejenPanel .kes{border-color:var(--warn);background:#fffaf0}",
-    "#ejenPanel textarea{width:100%;min-height:54px;margin-top:6px}"
+    "#ejenPanel textarea{width:100%;min-height:54px;margin-top:6px}",
+    // Skrin telefon: jangan biar nama fail panjang atau borang DEMO menolak halaman melebihi lebar skrin
+    "#ejenPanel{min-width:0;max-width:100%;box-sizing:border-box}",
+    "#ejenPanel .ejenGrid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)} #ejenPanel .ejenGrid>div{min-width:0}",
+    "#ejenPanel .listItem,#ejenPanel .listTitle,#ejenPanel .meta,#ejenPanel .quote,#ejenPanel .chk,#ejenPanel .log,#ejenPanel a{overflow-wrap:anywhere;word-break:break-word}",
+    "#ejenPanel .ejenBar>*{min-width:0;max-width:100%}",
+    "@media(max-width:900px){#ejenPanel .ejenGrid{grid-template-columns:minmax(0,1fr)}}",
+    "@media(max-width:640px){#ejenPanel .ejenDemo .ejenBar>*{flex:1 1 100%;box-sizing:border-box}#ejenPanel .ejenBar select{flex:1 1 100%}#ejenPanel .panelHead{flex-wrap:wrap;gap:6px}}"
   ].join("\n");
   document.head.appendChild(css);
 
