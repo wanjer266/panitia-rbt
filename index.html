@@ -607,5 +607,6 @@ $("resetBtn").onclick=async()=>{
 
 (async()=>{try{await apiGet();loadYears();await refreshClassControls();await showDashboard()}catch(err){console.error(err);loadYears();await refreshClassControls();await showDashboard();toast(err.message||"Gagal berhubung dengan Google Drive MOE.")}})();
 </script>
+<script src="ejen-susulan.js"></script>
 </body>
 </html>
